@@ -9,11 +9,142 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useState } from "react"
+
+
+type ErrorState = {
+  email: string,
+  nickname: string,
+  password: string,
+  password2: string
+}
 
 export function RegisterForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+
+  const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [error, setError] = useState<ErrorState>({
+    email: '',
+    nickname: '',
+    password: '',
+    password2: '',
+  })
+
+  const validateEmail = () => {
+    if(!email){
+      setError((prev) => ({
+        ...prev,
+        email: 'Please enter your email address'
+      }));
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if(!emailRegex.test(email)){
+      setError((prev) => ({
+        ...prev,
+        email: 'Please enter a valid email address'
+      }));
+      return false;
+  }};
+
+  const validateNickname = () => {
+    if(!nickname){
+      setError((prev) => ({
+        ...prev,
+        nickname: "Please enter a nickname to use on QuizMe"
+      }));
+      return false;
+    }
+  }
+
+  const validatePassword = () => {
+    let passwordValid = true;
+    if(!password){
+      passwordValid = false;
+      setError((prev) => ({
+        ...prev,
+        password: 'Please enter your password'
+      }))
+    };
+
+    return passwordValid;
+  }
+
+  const validatePassword2 = () => {
+    let password2Valid = true;
+    if(password && !password2){
+      password2Valid = false;
+      setError((prev) => ({
+        ...prev,
+        password2: 'Please re-enter your password for confirmation'
+      }))
+    }
+
+    if(password2 && password !== password2){
+      password2Valid = false;
+      setError((prev) => ({
+        ...prev,
+        password2: 'Passwords do not match'
+      }))
+    };
+
+    return password2Valid;
+  }
+
+  const validate = () => {
+    let isValid = true;
+    if(!validateEmail()) isValid = false;
+    if(!validateNickname()) isValid = false;
+    if(!validatePassword()) isValid = false;
+    if(!validatePassword2()) isValid = false;
+    return isValid;
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError((prev) => ({
+      ...prev,
+      email: ''
+    }))
+    setEmail(e.target.value);
+  }
+
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError((prev) => ({
+      ...prev,
+      nickname: ''
+    }))
+    setNickname(e.target.value);
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError((prev) => ({
+      ...prev,
+      password: ''
+    }))
+    setPassword(e.target.value);
+  }
+
+  const handlePassword2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError((prev) => ({
+      ...prev,
+      password2: ''
+    }))
+    setPassword2(e.target.value);
+  }
+
+  const handleRegisterButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if(!validate()){
+      return;
+    }
+    e.preventDefault();
+    console.log("Register clicked!!");
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -45,21 +176,53 @@ export function RegisterForm({
                     type="email"
                     placeholder="m@example.com"
                     required
+                    onChange={handleEmailChange}
+                    value={email}
                   />
+                  <p className="text-red-500 text-sm font-medium">{error.email}</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="nickname">Nickname</Label>
+                  <Input
+                    id="nickname"
+                    type="text"
+                    placeholder="Enter your nickname"
+                    required
+                    onChange={handleNicknameChange}
+                    value={nickname}
+                  />
+                  <p className="text-red-500 text-sm font-medium">{error.nickname}</p>
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
                     <Label htmlFor="password">Password</Label>
                   </div>
-                  <Input id="password" type="password" required />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={handlePasswordChange} 
+                  />
+                  <p className="text-red-500 text-sm font-medium">{error.password}</p>
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
                     <Label htmlFor="password2">Confirm Password</Label>
                   </div>
-                  <Input id="password2" type="password" required />
+                  <Input 
+                    id="password2" 
+                    type="password" 
+                    required
+                    value={password2}
+                    onChange={handlePassword2Change} 
+                  />
+                  <p className="text-red-500 text-sm font-medium">{error.password2}</p>
                 </div>
-                <Button type="submit" className="w-full">
+                <Button 
+                  className="w-full"
+                  onClick={handleRegisterButtonClick}
+                  >
                   Register
                 </Button>
               </div>

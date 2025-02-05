@@ -34,8 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         upload_to='profile_pictures/',
         validators=[validate_profile_picture]
     )
-    first_name = models.CharField(max_length=140)
-    last_name = models.CharField(max_length=140)
+    nickname = models.CharField(max_length=255)
     display_name = models.CharField(max_length=160, blank=True, null=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
