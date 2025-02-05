@@ -10,6 +10,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import baseURL from "@/constants"
+import { useNavigate } from "react-router-dom"
 
 
 type ErrorState = {
@@ -19,11 +21,18 @@ type ErrorState = {
   password2: string
 }
 
+type RegisterData = {
+  email: string,
+  nickname: string,
+  password: string,
+}
+
 export function RegisterForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
 
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +43,7 @@ export function RegisterForm({
     password: '',
     password2: '',
   })
+  const navigate = useNavigate();
 
   const validateEmail = () => {
     if(!email){
@@ -50,7 +60,9 @@ export function RegisterForm({
         email: 'Please enter a valid email address'
       }));
       return false;
-  }};
+  };
+  return true;
+};
 
   const validateNickname = () => {
     if(!nickname){
@@ -59,7 +71,8 @@ export function RegisterForm({
         nickname: "Please enter a nickname to use on QuizMe"
       }));
       return false;
-    }
+    };
+    return true;
   }
 
   const validatePassword = () => {
@@ -71,7 +84,6 @@ export function RegisterForm({
         password: 'Please enter your password'
       }))
     };
-
     return passwordValid;
   }
 
@@ -84,7 +96,6 @@ export function RegisterForm({
         password2: 'Please re-enter your password for confirmation'
       }))
     }
-
     if(password2 && password !== password2){
       password2Valid = false;
       setError((prev) => ({
@@ -92,7 +103,6 @@ export function RegisterForm({
         password2: 'Passwords do not match'
       }))
     };
-
     return password2Valid;
   }
 
@@ -137,12 +147,52 @@ export function RegisterForm({
     setPassword2(e.target.value);
   }
 
-  const handleRegisterButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
     if(!validate()){
+      console.log("Wroongggg")
       return;
     }
-    e.preventDefault();
-    console.log("Register clicked!!");
+    
+    // Send to Register endpoint
+    const formBody: RegisterData = {
+      'email': email,
+      'nickname': nickname,
+      'password': password
+    };
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${baseURL}/api/register/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formBody)
+      });
+
+      if(!response.ok){
+        const error = await response.json();
+        console.log(error);
+        console.log("Bad response");
+        if(error.email){
+          setError((prev) => ({
+            ...prev,
+            email: error.email[0]
+          }))
+        };
+      }else{
+        const data = await response.json();
+        console.log(data);
+        alert("Registration successful");
+        navigate('/login');
+      }
+    }catch(err){
+      console.error(err);
+    }finally{
+      setLoading(false);
+    }
   }
 
   return (
@@ -155,11 +205,11 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button variant="outline" className="w-full">
-                  <svg fill="#000000" width="800px" height="800px" viewBox="-2 -2 24 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" class="jam jam-google"><path d='M4.376 8.068A5.944 5.944 0 0 0 4.056 10c0 .734.132 1.437.376 2.086a5.946 5.946 0 0 0 8.57 3.045h.001a5.96 5.96 0 0 0 2.564-3.043H10.22V8.132h9.605a10.019 10.019 0 0 1-.044 3.956 9.998 9.998 0 0 1-3.52 5.71A9.958 9.958 0 0 1 10 20 9.998 9.998 0 0 1 1.118 5.401 9.998 9.998 0 0 1 10 0c2.426 0 4.651.864 6.383 2.302l-3.24 2.652a5.948 5.948 0 0 0-8.767 3.114z' /></svg>
+                  <svg fill="#000000" width="800px" height="800px" viewBox="-2 -2 24 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" className="jam jam-google"><path d='M4.376 8.068A5.944 5.944 0 0 0 4.056 10c0 .734.132 1.437.376 2.086a5.946 5.946 0 0 0 8.57 3.045h.001a5.96 5.96 0 0 0 2.564-3.043H10.22V8.132h9.605a10.019 10.019 0 0 1-.044 3.956 9.998 9.998 0 0 1-3.52 5.71A9.958 9.958 0 0 1 10 20 9.998 9.998 0 0 1 1.118 5.401 9.998 9.998 0 0 1 10 0c2.426 0 4.651.864 6.383 2.302l-3.24 2.652a5.948 5.948 0 0 0-8.767 3.114z' /></svg>
                   Continue with Google
                 </Button>
               </div>
@@ -220,15 +270,15 @@ export function RegisterForm({
                   <p className="text-red-500 text-sm font-medium">{error.password2}</p>
                 </div>
                 <Button 
+                  type="submit"
                   className="w-full"
-                  onClick={handleRegisterButtonClick}
                   >
-                  Register
+                  {loading ? 'Loading...' : 'Register'}
                 </Button>
               </div>
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <a href="/login" className="underline underline-offset-4">
                   Login
                 </a>
               </div>

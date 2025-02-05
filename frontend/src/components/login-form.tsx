@@ -9,11 +9,102 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useState } from "react"
+import baseURL from "@/constants"
+
+type LoginData = {
+  email: string,
+  password: string
+};
+
+type ErrorData = {
+  email: string,
+  password: string,
+  error: string // Non-field error
+}
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<ErrorData>({
+    email: '',
+    password: '',
+    error: '' 
+  })
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if(!email){
+      setError((prev) => ({
+        ...prev,
+        email: 'Please enter your email address'
+      }));
+      return;
+    };
+    if(!password){
+      setError((prev) => ({
+        ...prev,
+        password: 'Please enter your password'
+      }));
+      return;
+    };
+
+    const loginData: LoginData = {
+      email: email,
+      password: password
+    };
+
+    try{
+      setLoading(true);
+      const response = await fetch(`${baseURL}/api/login/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(loginData)
+      });
+      if(!response.ok){
+        const error = await response.json();
+        if(error.error){
+          setError((prev) => ({
+            ...prev,
+            error: error.error
+          }))
+        }
+        console.log(error);
+        console.log("Bad response");
+      }else{
+        const data = await response.json();
+        console.log(data);
+        setEmail('');
+        setPassword('');
+        setError({
+          email: '',
+          password: '',
+          error: ''
+        })
+      }
+    }catch(err){
+      console.error(err);
+    }finally{
+      setLoading(false);
+    }
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -24,11 +115,11 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button variant="outline" className="w-full">
-                  <svg fill="#000000" width="800px" height="800px" viewBox="-2 -2 24 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" class="jam jam-google"><path d='M4.376 8.068A5.944 5.944 0 0 0 4.056 10c0 .734.132 1.437.376 2.086a5.946 5.946 0 0 0 8.57 3.045h.001a5.96 5.96 0 0 0 2.564-3.043H10.22V8.132h9.605a10.019 10.019 0 0 1-.044 3.956 9.998 9.998 0 0 1-3.52 5.71A9.958 9.958 0 0 1 10 20 9.998 9.998 0 0 1 1.118 5.401 9.998 9.998 0 0 1 10 0c2.426 0 4.651.864 6.383 2.302l-3.24 2.652a5.948 5.948 0 0 0-8.767 3.114z' /></svg>
+                  <svg fill="#000000" width="800px" height="800px" viewBox="-2 -2 24 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin" className="jam jam-google"><path d='M4.376 8.068A5.944 5.944 0 0 0 4.056 10c0 .734.132 1.437.376 2.086a5.946 5.946 0 0 0 8.57 3.045h.001a5.96 5.96 0 0 0 2.564-3.043H10.22V8.132h9.605a10.019 10.019 0 0 1-.044 3.956 9.998 9.998 0 0 1-3.52 5.71A9.958 9.958 0 0 1 10 20 9.998 9.998 0 0 1 1.118 5.401 9.998 9.998 0 0 1 10 0c2.426 0 4.651.864 6.383 2.302l-3.24 2.652a5.948 5.948 0 0 0-8.767 3.114z' /></svg>
                   Login with Google
                 </Button>
               </div>
@@ -38,6 +129,7 @@ export function LoginForm({
                 </span>
               </div>
               <div className="grid gap-6">
+              <p className="text-red-500 text-sm font-medium">{error.error}</p>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -45,7 +137,10 @@ export function LoginForm({
                     type="email"
                     placeholder="m@example.com"
                     required
+                    onChange={handleEmailChange}
+                    value={email}
                   />
+                  <p className="text-red-500 text-sm font-medium">{error.email}</p>
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
@@ -57,15 +152,22 @@ export function LoginForm({
                       Forgot your password?
                     </a>
                   </div>
-                  <Input id="password" type="password" required />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required
+                    onChange={handlePasswordChange} 
+                    value={password}
+                  />
+                  <p className="text-red-500 text-sm font-medium">{error.password}</p>
                 </div>
                 <Button type="submit" className="w-full">
-                  Login
+                  {loading ? 'Loading...': 'Login'}
                 </Button>
               </div>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <a href="/register" className="underline underline-offset-4">
                   Sign up
                 </a>
               </div>
