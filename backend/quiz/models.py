@@ -4,6 +4,7 @@ from django.db import models
 class Quiz(models.Model):
     owner = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
+    questionTotal = models.PositiveIntegerField(default=0)
     category = models.ForeignKey('categories.Category', on_delete=models.CASCADE)
     tags = models.ManyToManyField('categories.Tag')
 
