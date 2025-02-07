@@ -7,6 +7,11 @@ class Quiz(models.Model):
     questionTotal = models.PositiveIntegerField(default=0)
     category = models.ForeignKey('categories.Category', on_delete=models.CASCADE)
     tags = models.ManyToManyField('categories.Tag')
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created']
 
     def __str__(self):
         return self.title
@@ -32,16 +37,24 @@ class Option(models.Model):
 class UserQuiz(models.Model):
     user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
     quiz = models.ForeignKey('quiz.Quiz', on_delete=models.CASCADE)
-    answered_correctly = models.PositiveIntegerField(default=0)
+    
+    @property
+    def score(self):
+        total = 0
+        for user_question_option_map in self.userquestionoptionmap_set.all():
+            if user_question_option_map.option.is_answer:
+                total += 1
+        return total
+
 
     def __str__(self):
         return f"{self.user.email} - {self.quiz.title}"
     
 
 class UserQuestionOptionMap(models.Model):
-    user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
+    user_quiz = models.ForeignKey('UserQuiz', on_delete=models.CASCADE)
     question = models.ForeignKey('quiz.Question', on_delete=models.CASCADE)
     option = models.ForeignKey('quiz.Option', on_delete=models.CASCADE)
 
-    def __str__(self):
+    def __str__(self): 
         return f"{self.question.content[:25]} - {self.option.content[:25]}"

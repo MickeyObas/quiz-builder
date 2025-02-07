@@ -1,13 +1,21 @@
 from rest_framework.serializers import (
     ModelSerializer,
     CharField,
-    SerializerMethodField
+    SerializerMethodField,
+    IntegerField
 )
 
-from .models import Quiz, Question
-from categories.serializers import CategorySerializer
-from accounts.serializers import UserSerializer
+from .models import Quiz, Question, Option, UserQuiz
 
+
+class OptionSerializer(ModelSerializer):
+    class Meta:
+        model = Option
+        fields = [
+            'id',
+            'content',
+            'is_answer'
+        ]
 
 class QuizSerializer(ModelSerializer):
     class Meta:
@@ -20,9 +28,32 @@ class QuizSerializer(ModelSerializer):
             'questionTotal'
         ]
 
+    def create(self, validated_data):
+        # request = self.context.get('request')
+        # user_id = request.user.id
+        # validated_data['owner'] = user_id
+        return super().create(validated_data)
+
+
+class QuestionSerializer(ModelSerializer):
+    options = SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = [
+            'id',
+            'content',
+            'options'
+        ]
+
+    def get_options(self, obj):
+        options = obj.option_set.all()
+        serializer = OptionSerializer(options, many=True)
+        return serializer.data
 
 class QuizDisplaySerializer(ModelSerializer):
     category = CharField(source='category.title')
+    owner = CharField(source='owner.email')
     questions = SerializerMethodField()
     
     class Meta:
@@ -37,13 +68,18 @@ class QuizDisplaySerializer(ModelSerializer):
         ]
 
     def get_questions(self, obj):
-        return [question.content for question in obj.question_set.all()]
+        questions = obj.question_set.all()
+        serializer = QuestionSerializer(questions, many=True)
+        return serializer.data
     
 
-class QuestionSerializer(ModelSerializer):
+class UserQuizSerializer(ModelSerializer):
+    quiz = QuizDisplaySerializer()
+
     class Meta:
-        model = Question
+        model = UserQuiz
         fields = [
+            'user',
             'quiz',
-            'content'
+            'score'
         ]
