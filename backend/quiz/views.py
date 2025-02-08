@@ -80,15 +80,13 @@ def create_user_quiz(request, quiz_id):
 def process_quiz(request, quiz_id):
     try:
         quiz = Quiz.objects.get(id=quiz_id)
-        user_quiz = UserQuiz.objects.get(
+        user_quiz = UserQuiz.objects.filter(
             user=request.user,
             quiz=quiz
-        )
-        print(request.data)
+        ).latest()
         for quiz_response in request.data:
             question = Question.objects.get(id=quiz_response['questionId'])
             option = Option.objects.get(id=quiz_response['optionId'])
-            # Create Map
             UserQuestionOptionMap.objects.create(
                 user_quiz=user_quiz,
                 question=question,

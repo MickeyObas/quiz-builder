@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import baseURL from "@/constants"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/context/AuthContext"
 
 type LoginData = {
   email: string,
@@ -23,11 +25,25 @@ type ErrorData = {
   error: string // Non-field error
 }
 
+type User = {
+  id: string,
+  nickname: string,
+  email: string,
+  profile_picture: string | null
+}
+
+type AuthData = {
+  user: User | null,
+  refresh: string,
+  access: string
+}
+
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
 
+  const {login, user} = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +51,8 @@ export function LoginForm({
     email: '',
     password: '',
     error: '' 
-  })
+  });
+  const navigate = useNavigate();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -88,15 +105,17 @@ export function LoginForm({
         console.log(error);
         console.log("Bad response");
       }else{
-        const data = await response.json();
+        const data: AuthData = await response.json();
         console.log(data);
+        login(data);
         setEmail('');
         setPassword('');
         setError({
           email: '',
           password: '',
           error: ''
-        })
+        });
+        navigate('/');
       }
     }catch(err){
       console.error(err);

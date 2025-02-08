@@ -11,6 +11,7 @@ from .models import (
 
 class UserQuizModelAdmin(admin.ModelAdmin):
     list_display = [
+        'id',
         'user',
         'quiz',
         'score'

@@ -10,9 +10,6 @@ class Quiz(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ['-created']
-
     def __str__(self):
         return self.title
     
@@ -36,8 +33,14 @@ class Option(models.Model):
 
 class UserQuiz(models.Model):
     user = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
-    quiz = models.ForeignKey('quiz.Quiz', on_delete=models.CASCADE)
+    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
     
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+
     @property
     def score(self):
         total = 0
@@ -46,15 +49,14 @@ class UserQuiz(models.Model):
                 total += 1
         return total
 
-
     def __str__(self):
         return f"{self.user.email} - {self.quiz.title}"
     
 
 class UserQuestionOptionMap(models.Model):
     user_quiz = models.ForeignKey('UserQuiz', on_delete=models.CASCADE)
-    question = models.ForeignKey('quiz.Question', on_delete=models.CASCADE)
-    option = models.ForeignKey('quiz.Option', on_delete=models.CASCADE)
+    question = models.ForeignKey('Question', on_delete=models.CASCADE)
+    option = models.ForeignKey('Option', on_delete=models.CASCADE)
 
     def __str__(self): 
         return f"{self.question.content[:25]} - {self.option.content[:25]}"
